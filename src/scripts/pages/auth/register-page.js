@@ -1,13 +1,31 @@
-import { registerUser } from '../../data/api';
 import { showMessageModal } from '../../utils/ui-helpers';
-import App from '../app';
 
-export default class RegisterPage {
+class RegisterPage {
+  constructor() {
+    this._registerSubmitHandler = null;
+  }
+
+  onRegisterSubmit(handler) {
+    this._registerSubmitHandler = handler;
+  }
+  
+  validateForm({ name, email, password }) {
+    return name && email && password && password.length >= 8;
+  }
+
+  showSuccess(message) {
+    showMessageModal('Registration Successful', message, 'success');
+  }
+
+  showError(message) {
+    showMessageModal('Registration Failed', message, 'error');
+  }
+
   async render() {
     return `
       <section aria-labelledby="register-heading" class="max-w-md mx-auto">
-        <h2 id="register-heading" class="text-3xl font-bold text-center mb-8 text-gray-700">Buat Akun Baru</h2>
-        <form id="register-form" class="space-y-6">
+        <h1 id="register-heading" class="text-3xl font-bold text-center mb-8 text-gray-700">Buat Akun Baru</h1>
+        <form id="register-form" class="space-y-6" novalidate>
           <div>
             <label for="register-name" class="block text-sm font-medium text-gray-700">Nama</label>
             <input type="text" id="register-name" name="name" required autocomplete="name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Nama Anda">
@@ -29,28 +47,19 @@ export default class RegisterPage {
     `;
   }
 
-  async afterRender(appInstance) {
+  async afterRender() {
     const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-      registerForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (appInstance) appInstance.showGlobalLoading();
-        const name = event.target.name.value;
-        const email = event.target.email.value;
-        const password = event.target.password.value;
-        try {
-          const response = await registerUser(name, email, password);
-          if (response.error) {
-            throw new Error(response.message || 'Registrasi gagal. Silakan coba lagi.');
-          }
-          showMessageModal('Registrasi Berhasil', 'Akun Anda telah berhasil dibuat. Silakan masuk.', 'success');
-          window.location.hash = '#/login';
-        } catch (error) {
-          showMessageModal('Registrasi Gagal', error.message, 'error');
-        } finally {
-          if (appInstance) appInstance.hideGlobalLoading();
-        }
-      });
-    }
+    registerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = event.target.name.value;
+      const email = event.target.email.value;
+      const password = event.target.password.value;
+
+      if (this._registerSubmitHandler) {
+        this._registerSubmitHandler({ name, email, password });
+      }
+    });
   }
 }
+
+export default RegisterPage;

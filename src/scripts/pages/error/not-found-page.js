@@ -1,4 +1,5 @@
-export default class NotFoundPage {
+// src/scripts/pages/error/not-found-page.js
+class NotFoundPage {
   async render() {
     return `
       <section class="container text-center py-20">
@@ -10,7 +11,9 @@ export default class NotFoundPage {
     `;
   }
 
-  async afterRender(appInstance) {
-    // Tidak ada aksi khusus
+  async afterRender() {
+    // No specific actions needed for this static page
   }
 }
+
+export default NotFoundPage;

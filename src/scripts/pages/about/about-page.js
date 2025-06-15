@@ -1,3 +1,4 @@
+// src/scripts/pages/about/about-page.js
 export default class AboutPage {
   async render() {
     return `
@@ -37,11 +38,7 @@ export default class AboutPage {
     `;
   }
 
-  async afterRender(appInstance) {
-    // Tidak ada interaksi spesifik atau inisialisasi yang dibutuhkan
-    // untuk halaman "About" yang statis ini.
-    // Fokus ke halaman utama bisa ditambahkan jika diperlukan.
-    const mainContentEl = document.getElementById('main-content');
-    if (mainContentEl) mainContentEl.focus({ preventScroll: true });
+  async afterRender() {
+    // No specific actions needed after render for this static page
   }
 }

@@ -1,8 +1,29 @@
 import L from 'leaflet';
 import CONFIG from '../config';
 
+// Import Leaflet assets
+import 'leaflet/dist/leaflet.css';
+import markerIconPng from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2xPng from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadowPng from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix for default marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIconPng,
+  iconRetinaUrl: markerIcon2xPng,
+  shadowUrl: markerShadowPng,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41],
+});
+
+
 let currentMapInstance = null;
 let currentCameraStream = null;
+
 
 export function showLoading(appViewContainer) {
   if (appViewContainer) {

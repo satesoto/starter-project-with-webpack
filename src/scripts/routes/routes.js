@@ -1,24 +1,18 @@
-// Hapus import halaman about dari starter
-// import AboutPage from '../pages/about/about-page';
-
-// Impor halaman-halaman baru untuk Aplikasi CeritaKita
-import HomePage from '../pages/home/home-page'; // Ini akan menjadi list cerita
+// src/scripts/routes/routes.js
+import HomePage from '../pages/home/home-page';
 import LoginPage from '../pages/auth/login-page';
 import RegisterPage from '../pages/auth/register-page';
 import AddStoryPage from '../pages/story/add-story-page';
 import StoryDetailPage from '../pages/story/story-detail-page';
-import NotFoundPage from '../pages/error/not-found-page';
-import AboutPage from '../pages/about/about-page'; // &lt;-- Tambahkan impor ini
-
+import AboutPage from '../pages/about/about-page';
 
 const routes = {
-  '/': HomePage, // Menggunakan kelasnya langsung, bukan instance
+  '/': HomePage,
   '/login': LoginPage,
   '/register': RegisterPage,
   '/add-story': AddStoryPage,
-  '/story/:id': StoryDetailPage, // Rute dengan parameter ID
-  '/about': AboutPage
-  // Tambahkan NotFoundPage jika URL tidak cocok (akan dihandle di App.js)
+  '/story/:id': StoryDetailPage,
+  '/about': AboutPage,
 };
 
 export default routes;
