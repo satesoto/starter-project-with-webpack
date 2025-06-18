@@ -1,3 +1,5 @@
+// webpack.common.js
+
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -32,14 +34,13 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "src/index.html"),
-      favicon: path.resolve(__dirname, "src/public/icons/favicon.png"), // Menggunakan ikon yang sama untuk favicon
+      favicon: path.resolve(__dirname, "src/public/icons/favicon.png"),
     }),
     new CopyWebpackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, "src/public/"),
           to: path.resolve(__dirname, "dist/"),
-          // Abaikan folder icons dan file manifest.json karena sudah di-handle oleh WebpackPwaManifest
           globOptions: {
             ignore: ["**/icons/**", "**/manifest.json"],
           },
@@ -73,28 +74,27 @@ module.exports = {
             cacheName: "story-image-cache",
             expiration: {
               maxEntries: 60,
-              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 hari
+              maxAgeSeconds: 30 * 24 * 60 * 60,
             },
           },
         },
       ],
     }),
     new WebpackPwaManifest({
-      // Opsi ini akan digunakan untuk membuat manifest.json secara otomatis
       name: "CeritaKita - Berbagi Cerita",
       short_name: "CeritaKita",
       description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
       background_color: "#ffffff",
       theme_color: "#2563EB",
-      start_url: ".", // Plugin akan secara otomatis menggabungkannya dengan publicPath
+      start_url: ".",
       display: "standalone",
-      publicPath: ".", // Menyesuaikan path agar cocok dengan struktur output
+      // publicPath: '.', // <-- HAPUS BARIS INI
       icons: [
         {
           src: path.resolve(__dirname, "src/public/icons/favicon.png"),
           sizes: [96, 128, 192, 256, 384, 512],
           purpose: "any maskable",
-          destination: "assets/icons", // Menyimpan ikon di folder assets/icons
+          destination: "assets/icons",
         },
       ],
     }),
