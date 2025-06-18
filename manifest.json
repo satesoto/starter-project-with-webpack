@@ -1,37 +1,37 @@
 {
   "icons": [
     {
-      "src": "auto/assets/icons/icon_512x512.3f4c66008f1408f9ee9aeedeaa228153.png",
+      "src": "auto/assets/icons/icon_512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "auto/assets/icons/icon_384x384.2b390183140a942afe1026e557caae70.png",
+      "src": "auto/assets/icons/icon_384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "auto/assets/icons/icon_256x256.41306a3caaa2c384691f7cb2bf5fa3bb.png",
+      "src": "auto/assets/icons/icon_256x256.png",
       "sizes": "256x256",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "auto/assets/icons/icon_192x192.8d1c33d24509f0ada2bfaf04241978d2.png",
+      "src": "auto/assets/icons/icon_192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "auto/assets/icons/icon_128x128.b28dc23ce8d4add251e35f4d56f6ced5.png",
+      "src": "auto/assets/icons/icon_128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "auto/assets/icons/icon_96x96.2b5cb8b7e0777caf6f2dc02ef9d85fe0.png",
+      "src": "auto/assets/icons/icon_96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any maskable"
