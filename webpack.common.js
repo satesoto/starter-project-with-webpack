@@ -1,8 +1,9 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { GenerateSW } = require("workbox-webpack-plugin"); // Impor GenerateSW
-
+const { GenerateSW } = require("workbox-webpack-plugin");
+// --- PASTIKAN BARIS INI ADA DAN TIDAK DI-COMMENT ---
+const WebpackPwaManifest = require("webpack-pwa-manifest");
 
 module.exports = {
   entry: {
@@ -43,14 +44,12 @@ module.exports = {
             ignore: ["**/icons/**", "**/manifest.json"],
           },
         },
-        // Tambahkan ini untuk menyalin skrip SW custom
         {
           from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
           to: path.resolve(__dirname, "dist/"),
         },
       ],
     }),
-    // Tambahkan plugin Workbox di sini
     new GenerateSW({
       swDest: "sw.js",
       clientsClaim: true,
@@ -58,20 +57,18 @@ module.exports = {
       importScripts: ["./sw-custom.js"],
       runtimeCaching: [
         {
-          // Cache permintaan ke Story API
           urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/v1/"),
-          handler: "StaleWhileRevalidate", // Gunakan data cache dulu, lalu perbarui di background
+          handler: "StaleWhileRevalidate",
           options: {
             cacheName: "story-api-cache",
             cacheableResponse: {
-              statuses: [0, 200], // Cache respons yang berhasil atau opaque (untuk CORS)
+              statuses: [0, 200],
             },
           },
         },
         {
-          // Cache gambar dari API
           urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/images/"),
-          handler: "CacheFirst", // Gunakan cache jika ada, jika tidak, baru ambil dari jaringan
+          handler: "CacheFirst",
           options: {
             cacheName: "story-image-cache",
             expiration: {
@@ -90,7 +87,6 @@ module.exports = {
       theme_color: "#2563EB",
       start_url: ".",
       display: "standalone",
-      // publicPath: '.', // <-- HAPUS BARIS INI
       icons: [
         {
           src: path.resolve(__dirname, "src/public/icons/favicon.png"),
