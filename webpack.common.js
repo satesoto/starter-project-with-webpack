@@ -1,8 +1,8 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { GenerateSW } = require("workbox-webpack-plugin"); // Impor GenerateSW
-
+const { GenerateSW } = require("workbox-webpack-plugin");
+const WebpackPwaManifest = require("webpack-pwa-manifest");
 
 module.exports = {
   entry: {
@@ -32,22 +32,24 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "src/index.html"),
-      favicon: path.resolve(__dirname, "src/public/favicon.png"),
+      favicon: path.resolve(__dirname, "src/public/icons/favicon.png"), // Menggunakan ikon yang sama untuk favicon
     }),
     new CopyWebpackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, "src/public/"),
           to: path.resolve(__dirname, "dist/"),
+          // Abaikan folder icons dan file manifest.json karena sudah di-handle oleh WebpackPwaManifest
+          globOptions: {
+            ignore: ["**/icons/**", "**/manifest.json"],
+          },
         },
-        // Tambahkan ini untuk menyalin skrip SW custom
         {
           from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
           to: path.resolve(__dirname, "dist/"),
         },
       ],
     }),
-    // Tambahkan plugin Workbox di sini
     new GenerateSW({
       swDest: "sw.js",
       clientsClaim: true,
@@ -55,27 +57,44 @@ module.exports = {
       importScripts: ["./sw-custom.js"],
       runtimeCaching: [
         {
-          // Cache permintaan ke Story API
           urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/v1/"),
-          handler: "StaleWhileRevalidate", // Gunakan data cache dulu, lalu perbarui di background
+          handler: "StaleWhileRevalidate",
           options: {
             cacheName: "story-api-cache",
             cacheableResponse: {
-              statuses: [0, 200], // Cache respons yang berhasil atau opaque (untuk CORS)
+              statuses: [0, 200],
             },
           },
         },
         {
-          // Cache gambar dari API
           urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/images/"),
-          handler: "CacheFirst", // Gunakan cache jika ada, jika tidak, baru ambil dari jaringan
+          handler: "CacheFirst",
           options: {
             cacheName: "story-image-cache",
             expiration: {
-              maxEntries: 60, // Batasi jumlah gambar yang di-cache
-              maxAgeSeconds: 30 * 24 * 60 * 60, // Cache selama 30 hari
+              maxEntries: 60,
+              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 hari
             },
           },
+        },
+      ],
+    }),
+    new WebpackPwaManifest({
+      // Opsi ini akan digunakan untuk membuat manifest.json secara otomatis
+      name: "CeritaKita - Berbagi Cerita",
+      short_name: "CeritaKita",
+      description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
+      background_color: "#ffffff",
+      theme_color: "#2563EB",
+      start_url: ".", // Plugin akan secara otomatis menggabungkannya dengan publicPath
+      display: "standalone",
+      publicPath: ".", // Menyesuaikan path agar cocok dengan struktur output
+      icons: [
+        {
+          src: path.resolve(__dirname, "src/public/icons/favicon.png"),
+          sizes: [96, 128, 192, 256, 384, 512],
+          purpose: "any maskable",
+          destination: "assets/icons", // Menyimpan ikon di folder assets/icons
         },
       ],
     }),
