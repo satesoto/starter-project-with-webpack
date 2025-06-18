@@ -1,23 +1,24 @@
-import routes from '../routes/routes';
-import { getActiveRoute, parseActivePathname } from '../routes/url-parser';
-import { isLoggedIn, clearAuthData, getUserName } from '../data/auth';
-import { showLoading, showMessageModal, stopCameraStream as globalStopCameraStream } from '../utils/ui-helpers';
-import { unsubscribeFromPushNotification } from '../data/api'; // <-- Impor fungsi unsubscribe
-
+import routes from "../routes/routes";
+import { getActiveRoute, parseActivePathname } from "../routes/url-parser";
+import { isLoggedIn, clearAuthData, getUserName } from "../data/auth";
+import { showLoading, showMessageModal, stopCameraStream as globalStopCameraStream } from "../utils/ui-helpers";
+import { unsubscribeFromPushNotification } from "../data/api"; // <-- Impor fungsi unsubscribe
 
 // Pages (Views)
-import NotFoundPage from './error/not-found-page';
-import LoginPage from './auth/login-page';
-import RegisterPage from './auth/register-page';
-import HomePage from './home/home-page';
-import AddStoryPage from './story/add-story-page';
-import StoryDetailPage from './story/story-detail-page';
+import NotFoundPage from "./error/not-found-page";
+import LoginPage from "./auth/login-page";
+import RegisterPage from "./auth/register-page";
+import HomePage from "./home/home-page";
+import AddStoryPage from "./story/add-story-page";
+import StoryDetailPage from "./story/story-detail-page";
 
 // Presenters
-import LoginPresenter from '../presenter/LoginPresenter';
-import RegisterPresenter from '../presenter/RegisterPresenter';
-import HomePresenter from '../presenter/HomePresenter';
-import StoryDetailPresenter from '../presenter/StoryDetailPresenter';
+import LoginPresenter from "../presenter/LoginPresenter";
+import RegisterPresenter from "../presenter/RegisterPresenter";
+// Hapus impor HomePresenter karena akan dipindah
+// import HomePresenter from '../presenter/HomePresenter';
+import StoryDetailPresenter from "../presenter/StoryDetailPresenter";
+import AddStoryPresenter from "../presenter/AddStoryPresenter";
 
 class App {
   #content = null;
@@ -132,27 +133,31 @@ class App {
   // }
 
   async handleLogout() {
-    // --- Tambahkan logika unsubscribe di sini ---
+    // 1. Lakukan proses logout yang penting bagi pengguna TERLEBIH DAHULU.
+    // Ini adalah operasi sinkronus yang cepat dan pasti.
+    clearAuthData();
+    this.updateNavLinks();
+    showMessageModal("Logout Berhasil", "Anda telah berhasil keluar.", "success");
+    window.location.hash = "#/login";
+
+    // 2. Lakukan proses 'housekeeping' (unsubscribe) di latar belakang.
+    // Proses ini tidak boleh memblokir pengalaman pengguna.
     try {
       if ("serviceWorker" in navigator && "PushManager" in window) {
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
+          // Kirim permintaan ke server untuk berhenti berlangganan
           await unsubscribeFromPushNotification(subscription);
+          // Hapus langganan dari browser
           await subscription.unsubscribe();
-          console.log("Berhasil unsubscribe dari notifikasi.");
+          console.log("Berhasil unsubscribe dari notifikasi di latar belakang.");
         }
       }
     } catch (error) {
-      console.error("Gagal melakukan unsubscribe:", error);
-      // Jangan hentikan proses logout meskipun unsubscribe gagal
+      // Jika gagal, cukup catat di konsol tanpa mengganggu pengguna.
+      console.error("Gagal melakukan unsubscribe di latar belakang:", error);
     }
-    // --- Akhir logika unsubscribe ---
-
-    clearAuthData();
-    this.updateNavLinks();
-    showMessageModal("Logout Berhasil", "Anda telah berhasil keluar.", "success");
-    window.location.hash = "#/login";
   }
 
   showGlobalLoading() {
@@ -165,7 +170,6 @@ class App {
   }
 
   async renderPage() {
-    // Stop camera stream if navigating away from add-story page
     if (this.#currentPath.startsWith("#/add-story") && !window.location.hash.startsWith("#/add-story")) {
       globalStopCameraStream();
     }
@@ -177,25 +181,25 @@ class App {
     const PageClass = routes[url] || NotFoundPage;
     const pageInstance = new PageClass(pathSegments);
 
-    // Render the page's skeleton HTML first to ensure elements exist in the DOM
     this.#content.innerHTML = await pageInstance.render();
-    // Call afterRender to set up internal event listeners for the page
     await pageInstance.afterRender(this);
 
-    // Now that the view is in the DOM, initialize the presenter to populate it with data.
-    // This solves timing issues where presenters tried to access elements that didn't exist yet.
     try {
       if (PageClass === LoginPage) {
         new LoginPresenter({ view: pageInstance, app: this });
       } else if (PageClass === RegisterPage) {
         new RegisterPresenter({ view: pageInstance, app: this });
-      } else if (PageClass === HomePage) {
-        const presenter = new HomePresenter({ view: pageInstance, app: this });
-        await presenter._loadStories(); // Manually trigger data loading
+      } else if (PageClass === AddStoryPage) {
+        // <-- Pastikan AddStoryPresenter diinisialisasi
+        new AddStoryPresenter({ view: pageInstance, app: this });
       } else if (PageClass === StoryDetailPage) {
-        const presenter = new StoryDetailPresenter({ view: pageInstance, app: this, urlParams: pathSegments });
-        // The presenter's constructor will trigger data loading.
+        new StoryDetailPresenter({ view: pageInstance, app: this, urlParams: pathSegments });
       }
+      // --- HAPUS BLOK IF UNTUK HOMEPAGE DARI SINI ---
+      // else if (PageClass === HomePage) {
+      //   const presenter = new HomePresenter({ view: pageInstance, app: this });
+      //   await presenter._loadStories();
+      // }
     } catch (e) {
       console.error("Error during presenter logic execution:", e);
     }

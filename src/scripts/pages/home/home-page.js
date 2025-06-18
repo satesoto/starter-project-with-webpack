@@ -5,6 +5,7 @@ import { isLoggedIn } from "../../data/auth";
 import { showMessageModal } from "../../utils/ui-helpers";
 import { requestNotificationPermission } from "../../utils/sw-register";
 import StoryDb from "../../data/idb-helper";
+import HomePresenter from "../../presenter/HomePresenter";
 
 class HomePage {
   async render() {
@@ -32,26 +33,34 @@ class HomePage {
   }
 
   async afterRender() {
-    const subscribeButton = document.getElementById("subscribe-notification-button");
-    const clearCacheButton = document.getElementById("clear-cache-button");
+    // --- PINDAHKAN LOGIKA PRESENTER KE SINI ---
+    if (isLoggedIn()) {
+      // Inisialisasi Presenter dan muat data
+      const presenter = new HomePresenter({ view: this, app: this });
+      presenter._loadStories();
 
-    if (subscribeButton) {
-      subscribeButton.addEventListener("click", async (event) => {
-        event.target.disabled = true;
-        await requestNotificationPermission();
-        event.target.disabled = false;
-      });
-    }
+      // Logika untuk tombol-tombol
+      const subscribeButton = document.getElementById("subscribe-notification-button");
+      const clearCacheButton = document.getElementById("clear-cache-button");
 
-    if (clearCacheButton) {
-      clearCacheButton.addEventListener("click", async () => {
-        try {
-          await StoryDb.clearAllStories();
-          showMessageModal("Berhasil", "Data cerita offline berhasil dihapus.", "success");
-        } catch (error) {
-          showMessageModal("Gagal", `Gagal menghapus data: ${error.message}`, "error");
-        }
-      });
+      if (subscribeButton) {
+        subscribeButton.addEventListener("click", async (event) => {
+          event.target.disabled = true;
+          await requestNotificationPermission();
+          event.target.disabled = false;
+        });
+      }
+
+      if (clearCacheButton) {
+        clearCacheButton.addEventListener("click", async () => {
+          try {
+            await StoryDb.clearAllStories();
+            showMessageModal("Berhasil", "Data cerita offline berhasil dihapus.", "success");
+          } catch (error) {
+            showMessageModal("Gagal", `Gagal menghapus data: ${error.message}`, "error");
+          }
+        });
+      }
     }
   }
 
