@@ -1,9 +1,10 @@
 // src/scripts/index.js
 
 // CSS imports
-import "../styles/styles.css"; // Impor gaya utama Anda
+import "../styles/styles.css";
 
-import App from "./pages/app"; // Menggunakan App.js yang sudah dimodifikasi
+import App from "./pages/app";
+import { swRegister } from "./utils/sw-register"; // <-- Perubahan di sini
 
 document.addEventListener("DOMContentLoaded", async () => {
   const app = new App({
@@ -18,4 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Initial page render
   await app.renderPage();
+
+  // Daftarkan Service Worker setelah halaman utama dimuat
+  await swRegister();
 });

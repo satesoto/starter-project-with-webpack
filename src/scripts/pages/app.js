@@ -2,6 +2,8 @@ import routes from '../routes/routes';
 import { getActiveRoute, parseActivePathname } from '../routes/url-parser';
 import { isLoggedIn, clearAuthData, getUserName } from '../data/auth';
 import { showLoading, showMessageModal, stopCameraStream as globalStopCameraStream } from '../utils/ui-helpers';
+import { unsubscribeFromPushNotification } from '../data/api'; // <-- Impor fungsi unsubscribe
+
 
 // Pages (Views)
 import NotFoundPage from './error/not-found-page';
@@ -23,14 +25,14 @@ class App {
   #navigationDrawer = null;
   #appViewContainer = null;
   #navLinksContainer = null;
-  #currentPath = '';
+  #currentPath = "";
 
   constructor({ content, drawerButton, navigationDrawer }) {
     this.#content = content;
     this.#appViewContainer = content;
     this.#drawerButton = drawerButton;
     this.#navigationDrawer = navigationDrawer;
-    this.#navLinksContainer = document.getElementById('nav-list');
+    this.#navLinksContainer = document.getElementById("nav-list");
 
     this._initialAppShell();
     this._setupDrawer();
@@ -38,34 +40,34 @@ class App {
 
   _initialAppShell() {
     // Setup listeners for the global message modal
-    const messageModal = document.getElementById('message-modal');
-    const closeXButton = document.getElementById('message-modal-close-x');
-    const closeButton = document.getElementById('message-modal-close-button');
-    const closeModal = () => messageModal?.classList.add('hidden');
-    
-    closeXButton?.addEventListener('click', closeModal);
-    closeButton?.addEventListener('click', closeModal);
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !messageModal?.classList.contains('hidden')) {
+    const messageModal = document.getElementById("message-modal");
+    const closeXButton = document.getElementById("message-modal-close-x");
+    const closeButton = document.getElementById("message-modal-close-button");
+    const closeModal = () => messageModal?.classList.add("hidden");
+
+    closeXButton?.addEventListener("click", closeModal);
+    closeButton?.addEventListener("click", closeModal);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !messageModal?.classList.contains("hidden")) {
         closeModal();
       }
     });
 
     // Correct implementation for the skip-to-content link
-    const skipLink = document.querySelector('.skip-link');
-    const mainContent = document.querySelector('#main-content');
-    
+    const skipLink = document.querySelector(".skip-link");
+    const mainContent = document.querySelector("#main-content");
+
     if (skipLink && mainContent) {
-      skipLink.addEventListener('click', (event) => {
-        event.preventDefault();       // Prevent URL hash change
-        skipLink.blur();              // Remove focus from the link
-        mainContent.focus();          // Set focus to the main content area
+      skipLink.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent URL hash change
+        skipLink.blur(); // Remove focus from the link
+        mainContent.focus(); // Set focus to the main content area
         mainContent.scrollIntoView(); // Scroll the page to the main content
       });
     }
-    
+
     // Set current year in the footer
-    const currentYearElement = document.getElementById('current-year');
+    const currentYearElement = document.getElementById("current-year");
     if (currentYearElement) {
       currentYearElement.textContent = new Date().getFullYear();
     }
@@ -74,22 +76,22 @@ class App {
   }
 
   _setupDrawer() {
-    this.#drawerButton.addEventListener('click', (event) => {
+    this.#drawerButton.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.#navigationDrawer.classList.toggle('open');
+      this.#navigationDrawer.classList.toggle("open");
     });
 
-    document.body.addEventListener('click', (event) => {
+    document.body.addEventListener("click", (event) => {
       if (!this.#navigationDrawer.contains(event.target) && !this.#drawerButton.contains(event.target)) {
-        this.#navigationDrawer.classList.remove('open');
+        this.#navigationDrawer.classList.remove("open");
       }
     });
 
     // Close drawer when a link or button inside it is clicked
-    this.#navigationDrawer.addEventListener('click', (event) => {
-        if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON') {
-            this.#navigationDrawer.classList.remove('open');
-        }
+    this.#navigationDrawer.addEventListener("click", (event) => {
+      if (event.target.tagName === "A" || event.target.tagName === "BUTTON") {
+        this.#navigationDrawer.classList.remove("open");
+      }
     });
   }
 
@@ -97,11 +99,11 @@ class App {
     if (!this.#navLinksContainer) return;
     const loggedIn = isLoggedIn();
     const userName = getUserName();
-    let navContent = '';
+    let navContent = "";
 
     if (loggedIn) {
       navContent = `
-        <li><span class="text-sm hidden md:inline px-3 py-2">Halo, ${userName || 'Pengguna'}!</span></li>
+        <li><span class="text-sm hidden md:inline px-3 py-2">Halo, ${userName || "Pengguna"}!</span></li>
         <li><a href="#/" class="nav-link">Beranda</a></li>
         <li><a href="#/add-story" class="nav-link">Tambah Cerita</a></li>
         <li><a href="#/about" class="nav-link">Tentang</a></li>
@@ -118,15 +120,39 @@ class App {
     this.#navLinksContainer.innerHTML = navContent;
 
     if (loggedIn) {
-      document.getElementById('logout-button-global')?.addEventListener('click', () => this.handleLogout());
+      document.getElementById("logout-button-global")?.addEventListener("click", () => this.handleLogout());
     }
   }
 
-  handleLogout() {
+  // handleLogout() {
+  //   clearAuthData();
+  //   this.updateNavLinks();
+  //   showMessageModal("Logout Berhasil", "Anda telah berhasil keluar.", "success");
+  //   window.location.hash = "#/login";
+  // }
+
+  async handleLogout() {
+    // --- Tambahkan logika unsubscribe di sini ---
+    try {
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await unsubscribeFromPushNotification(subscription);
+          await subscription.unsubscribe();
+          console.log("Berhasil unsubscribe dari notifikasi.");
+        }
+      }
+    } catch (error) {
+      console.error("Gagal melakukan unsubscribe:", error);
+      // Jangan hentikan proses logout meskipun unsubscribe gagal
+    }
+    // --- Akhir logika unsubscribe ---
+
     clearAuthData();
     this.updateNavLinks();
-    showMessageModal('Logout Berhasil', 'Anda telah berhasil keluar.', 'success');
-    window.location.hash = '#/login';
+    showMessageModal("Logout Berhasil", "Anda telah berhasil keluar.", "success");
+    window.location.hash = "#/login";
   }
 
   showGlobalLoading() {
@@ -134,20 +160,20 @@ class App {
   }
 
   hideGlobalLoading() {
-    const spinner = this.#appViewContainer.querySelector('.spinner');
+    const spinner = this.#appViewContainer.querySelector(".spinner");
     spinner?.remove();
   }
 
   async renderPage() {
     // Stop camera stream if navigating away from add-story page
-    if (this.#currentPath.startsWith('#/add-story') && !window.location.hash.startsWith('#/add-story')) {
+    if (this.#currentPath.startsWith("#/add-story") && !window.location.hash.startsWith("#/add-story")) {
       globalStopCameraStream();
     }
     this.#currentPath = window.location.hash;
 
     const url = getActiveRoute();
     const pathSegments = parseActivePathname();
-    
+
     const PageClass = routes[url] || NotFoundPage;
     const pageInstance = new PageClass(pathSegments);
 
@@ -159,22 +185,22 @@ class App {
     // Now that the view is in the DOM, initialize the presenter to populate it with data.
     // This solves timing issues where presenters tried to access elements that didn't exist yet.
     try {
-        if (PageClass === LoginPage) {
-            new LoginPresenter({ view: pageInstance, app: this });
-        } else if (PageClass === RegisterPage) {
-            new RegisterPresenter({ view: pageInstance, app: this });
-        } else if (PageClass === HomePage) {
-            const presenter = new HomePresenter({ view: pageInstance, app: this });
-            await presenter._loadStories(); // Manually trigger data loading
-        } else if (PageClass === StoryDetailPage) {
-            const presenter = new StoryDetailPresenter({ view: pageInstance, app: this, urlParams: pathSegments });
-            // The presenter's constructor will trigger data loading.
-        }
-    } catch(e) {
-        console.error("Error during presenter logic execution:", e);
-    } 
-    
-    document.getElementById('main-content')?.focus({ preventScroll: true });
+      if (PageClass === LoginPage) {
+        new LoginPresenter({ view: pageInstance, app: this });
+      } else if (PageClass === RegisterPage) {
+        new RegisterPresenter({ view: pageInstance, app: this });
+      } else if (PageClass === HomePage) {
+        const presenter = new HomePresenter({ view: pageInstance, app: this });
+        await presenter._loadStories(); // Manually trigger data loading
+      } else if (PageClass === StoryDetailPage) {
+        const presenter = new StoryDetailPresenter({ view: pageInstance, app: this, urlParams: pathSegments });
+        // The presenter's constructor will trigger data loading.
+      }
+    } catch (e) {
+      console.error("Error during presenter logic execution:", e);
+    }
+
+    document.getElementById("main-content")?.focus({ preventScroll: true });
     this.updateNavLinks();
   }
 }

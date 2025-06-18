@@ -1,4 +1,5 @@
-import { getAllStories } from '../data/api';
+import { getAllStories as fetchAllStories } from "../data/api";
+import StoryDb from "../data/idb-helper";
 
 class HomePresenter {
   constructor({ view, app }) {
@@ -6,16 +7,24 @@ class HomePresenter {
     this._app = app;
   }
 
-  /**
-   * This method is called by app.js after the initial view is rendered.
-   * It fetches the stories and tells the view to display them or show an error.
-   */
   async _loadStories() {
     try {
-      const response = await getAllStories();
+      // Coba ambil dari jaringan dulu
+      const response = await fetchAllStories();
       this._view.showStories(response.listStory);
+      // Jika berhasil, simpan ke IndexedDB
+      await StoryDb.putAllStories(response.listStory);
     } catch (error) {
-      this._view.showError(error.message);
+      // Jika jaringan gagal, coba ambil dari IndexedDB
+      console.log("Gagal mengambil dari jaringan, mencoba dari IndexedDB...");
+      const storiesFromDb = await StoryDb.getAllStories();
+      if (storiesFromDb && storiesFromDb.length > 0) {
+        this._view.showStories(storiesFromDb);
+        this._view.showError("Anda sedang offline. Menampilkan data yang tersimpan."); // Beri pesan
+      } else {
+        // Jika keduanya gagal, tampilkan error
+        this._view.showError(error.message || "Tidak ada data yang bisa ditampilkan.");
+      }
     }
   }
 }

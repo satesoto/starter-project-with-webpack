@@ -85,3 +85,30 @@ export async function addNewStory(description, photoFile, lat, lon) {
     body: formData,
   });
 }
+
+export async function subscribeToPushNotification(subscription) {
+  const rawSubscription = subscription.toJSON();
+  const body = {
+    endpoint: rawSubscription.endpoint,
+    keys: {
+      p256dh: rawSubscription.keys.p256dh,
+      auth: rawSubscription.keys.auth,
+    },
+  };
+
+  return fetchWithAuth("/notifications/subscribe", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function unsubscribeFromPushNotification(subscription) {
+  const body = {
+    endpoint: subscription.endpoint,
+  };
+
+  return fetchWithAuth("/notifications/subscribe", {
+    method: "DELETE",
+    body: JSON.stringify(body),
+  });
+}
