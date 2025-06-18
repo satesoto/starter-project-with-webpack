@@ -1,2 +1,2 @@
-APP_URL=https://satesoto.github.io/cerita-kita-app/
+APP_URL=https://satesoto.github.io/starter-project-with-webpack/
 MAP_SERVICE_API_KEY=<api_key>
