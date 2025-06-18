@@ -1,8 +1,9 @@
+// webpack.common.js
+
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const { GenerateSW } = require("workbox-webpack-plugin");
-// --- PASTIKAN BARIS INI ADA DAN TIDAK DI-COMMENT ---
 const WebpackPwaManifest = require("webpack-pwa-manifest");
 
 module.exports = {
@@ -79,7 +80,11 @@ module.exports = {
         },
       ],
     }),
+    // --- KONFIGURASI YANG DISEMPURNAKAN ---
     new WebpackPwaManifest({
+      filename: "manifest.json", // 1. Paksa nama file menjadi manifest.json
+      inject: true, // 2. Pastikan file ini di-inject ke index.html
+      fingerprints: false, // 3. Matikan penambahan hash pada nama file ikon
       name: "CeritaKita - Berbagi Cerita",
       short_name: "CeritaKita",
       description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
