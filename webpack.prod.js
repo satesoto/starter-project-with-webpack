@@ -1,10 +1,13 @@
-const path = require("path"); // <-- TAMBAHKAN BARIS INI
-const common = require("./webpack.common.js");
+const path = require("path");
 const { merge } = require("webpack-merge");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const common = require("./webpack.common.js");
 
 module.exports = merge(common, {
   mode: "production",
+  output: {
+    publicPath: "/starter-project-with-webpack/",
+  },
   optimization: {
     splitChunks: {
       chunks: "all",
