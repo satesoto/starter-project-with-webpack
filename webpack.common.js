@@ -1,9 +1,6 @@
-// webpack.common.js
-
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { GenerateSW } = require("workbox-webpack-plugin");
 const WebpackPwaManifest = require("webpack-pwa-manifest");
 
 module.exports = {
@@ -39,10 +36,12 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
+          // Hanya salin file yang tidak di-handle oleh plugin lain (seperti sw-custom.js)
           from: path.resolve(__dirname, "src/public/"),
           to: path.resolve(__dirname, "dist/"),
           globOptions: {
-            ignore: ["**/icons/**", "**/manifest.json"],
+            // Hapus baris ignore yang memblokir manifest.json
+            ignore: ["**/icons/**"],
           },
         },
         {
@@ -51,46 +50,14 @@ module.exports = {
         },
       ],
     }),
-    new GenerateSW({
-      swDest: "sw.js",
-      clientsClaim: true,
-      skipWaiting: true,
-      importScripts: ["./sw-custom.js"],
-      runtimeCaching: [
-        {
-          urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/v1/"),
-          handler: "StaleWhileRevalidate",
-          options: {
-            cacheName: "story-api-cache",
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-        {
-          urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/images/"),
-          handler: "CacheFirst",
-          options: {
-            cacheName: "story-image-cache",
-            expiration: {
-              maxEntries: 60,
-              maxAgeSeconds: 30 * 24 * 60 * 60,
-            },
-          },
-        },
-      ],
-    }),
-    // --- KONFIGURASI YANG DISEMPURNAKAN ---
+    // Konfigurasi WebpackPwaManifest sudah cukup baik, kita akan menggunakannya sebagai sumber utama
     new WebpackPwaManifest({
-      filename: "manifest.json", // 1. Paksa nama file menjadi manifest.json
-      inject: true, // 2. Pastikan file ini di-inject ke index.html
-      fingerprints: false, // 3. Matikan penambahan hash pada nama file ikon
       name: "CeritaKita - Berbagi Cerita",
       short_name: "CeritaKita",
       description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
       background_color: "#ffffff",
       theme_color: "#2563EB",
-      start_url: ".",
+      start_url: ".", // Menggunakan '.' agar merujuk ke root dari aplikasi
       display: "standalone",
       icons: [
         {

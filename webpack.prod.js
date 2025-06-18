@@ -1,4 +1,4 @@
-const path = require("path"); // <-- TAMBAHKAN BARIS INI
+const path = require("path"); // Pastikan baris ini ada
 const common = require("./webpack.common.js");
 const { merge } = require("webpack-merge");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
