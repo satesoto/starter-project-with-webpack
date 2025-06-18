@@ -57,8 +57,10 @@ module.exports = {
       description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
       background_color: "#ffffff",
       theme_color: "#2563EB",
-      start_url: ".", // Menggunakan '.' agar merujuk ke root dari aplikasi
+      start_url: ".",
       display: "standalone",
+      publicPath: '.', // <--- TAMBAHKAN BARIS INI
+      filename: 'manifest.json', // <--- TAMBAHKAN BARIS INI
       icons: [
         {
           src: path.resolve(__dirname, "src/public/icons/favicon.png"),
