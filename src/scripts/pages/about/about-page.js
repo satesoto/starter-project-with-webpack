@@ -1,6 +1,6 @@
 // src/scripts/pages/about/about-page.js
 
-import { requestNotificationPermission } from '../../utils/sw-register'; // <-- UBAH PATH DI SINI
+// Tidak perlu impor 'requestNotificationPermission' atau 'idb-helper' lagi di sini
 
 export default class AboutPage {
   async render() {
@@ -30,16 +30,9 @@ export default class AboutPage {
             <li class="mb-2">Menampilkan detail cerita beserta lokasi di peta (jika tersedia)</li>
             <li class="mb-2">Antarmuka yang responsif dan aksesibel</li>
             <li class="mb-2">Transisi halaman yang halus untuk pengalaman pengguna yang lebih baik</li>
+            <li class="mb-2">Dukungan offline dan dapat di-install (PWA)</li>
+            <li class="mb-2">Push Notifications untuk update terbaru</li>
           </ul>
-        </div>
-
-        <section class="about-page-section ...">
-        <div class="bg-white shadow-md rounded-lg p-6 mt-8 text-center">
-          <h2 class="text-2xl font-semibold text-gray-700 mb-4">Notifikasi</h2>
-          <p class="text-gray-600 mb-4">Aktifkan notifikasi untuk mendapatkan pemberitahuan saat ada cerita baru!</p>
-          <button id="subscribe-notification-button" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors">
-            Aktifkan Notifikasi
-          </button>
         </div>
         
         <div class="mt-8 text-center text-sm text-gray-600">
@@ -51,11 +44,6 @@ export default class AboutPage {
   }
 
   async afterRender() {
-    const subscribeButton = document.getElementById("subscribe-notification-button");
-    subscribeButton.addEventListener("click", async (event) => {
-      event.target.disabled = true;
-      await requestNotificationPermission();
-      event.target.disabled = false;
-    });
+    // Tidak ada lagi aksi yang diperlukan setelah render untuk halaman ini
   }
 }

@@ -36,6 +36,12 @@ const StoryDb = {
   async deleteStory(id) {
     return (await dbPromise).delete(OBJECT_STORE_NAME, id);
   },
+  async clearAllStories() {
+    const tx = (await dbPromise).transaction(OBJECT_STORE_NAME, "readwrite");
+    const store = tx.objectStore(OBJECT_STORE_NAME);
+    await store.clear(); // Menghapus semua data
+    return tx.done;
+  },
 };
 
 export default StoryDb;

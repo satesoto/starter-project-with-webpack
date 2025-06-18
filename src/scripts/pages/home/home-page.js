@@ -1,21 +1,30 @@
-import { showFormattedDate } from '../../utils';
-import { isLoggedIn } from '../../data/auth';
-import { showMessageModal } from '../../utils/ui-helpers';
+// src/scripts/pages/home/home-page.js
+
+import { showFormattedDate } from "../../utils";
+import { isLoggedIn } from "../../data/auth";
+import { showMessageModal } from "../../utils/ui-helpers";
+import { requestNotificationPermission } from "../../utils/sw-register";
+import StoryDb from "../../data/idb-helper";
 
 class HomePage {
-  /**
-   * Renders the initial skeleton of the page with a loading placeholder.
-   */
   async render() {
     if (!isLoggedIn()) {
-      window.location.hash = '#/login';
-      return '<p>Anda harus login untuk melihat halaman ini.</p>';
+      window.location.hash = "#/login";
+      return "<p>Anda harus login untuk melihat halaman ini.</p>";
     }
     return `
       <section class="story-list-container container">
-        <h1 class="text-3xl font-bold mb-6 text-gray-700">Kumpulan Cerita</h1>
+        <h1 class="text-3xl font-bold mb-4 text-gray-700">Kumpulan Cerita</h1>
+        
+        <div class="home-controls mb-6 flex flex-wrap items-center gap-3">
+          <button id="subscribe-notification-button" class="btn btn-outline-green">
+            Aktifkan Notifikasi
+          </button>
+          <button id="clear-cache-button" class="btn btn-outline-yellow">
+            Hapus Cache Cerita
+          </button>
+        </div>
         <div id="stories-container">
-          <!-- Stories will be loaded here by the presenter -->
           <div class="spinner" aria-label="Memuat cerita..."></div>
         </div>
       </section>
@@ -23,27 +32,41 @@ class HomePage {
   }
 
   async afterRender() {
-    // All logic is now handled by the presenter.
+    const subscribeButton = document.getElementById("subscribe-notification-button");
+    const clearCacheButton = document.getElementById("clear-cache-button");
+
+    if (subscribeButton) {
+      subscribeButton.addEventListener("click", async (event) => {
+        event.target.disabled = true;
+        await requestNotificationPermission();
+        event.target.disabled = false;
+      });
+    }
+
+    if (clearCacheButton) {
+      clearCacheButton.addEventListener("click", async () => {
+        try {
+          await StoryDb.clearAllStories();
+          showMessageModal("Berhasil", "Data cerita offline berhasil dihapus.", "success");
+        } catch (error) {
+          showMessageModal("Gagal", `Gagal menghapus data: ${error.message}`, "error");
+        }
+      });
+    }
   }
 
-  /**
-   * Displays an error message on the page. This method is called by the presenter.
-   * @param {string} message The error message to display.
-   */
   showError(message) {
-    const container = document.getElementById('stories-container');
+    const container = document.getElementById("stories-container");
     if (container) {
       container.innerHTML = `<p class="text-center text-red-500">Gagal memuat cerita: ${message}</p>`;
     }
-    showMessageModal('Gagal Memuat Cerita', message, 'error');
+    if (!message.includes("offline")) {
+      showMessageModal("Gagal Memuat Cerita", message, "error");
+    }
   }
 
-  /**
-   * Renders the list of stories into the container. This method is called by the presenter.
-   * @param {Array<object>} stories The array of story objects.
-   */
   showStories(stories) {
-    const container = document.getElementById('stories-container');
+    const container = document.getElementById("stories-container");
     if (!container) return;
 
     if (!stories || stories.length === 0) {
@@ -55,14 +78,16 @@ class HomePage {
     }
 
     let storiesHtml = '<div class="stories-grid">';
-    stories.forEach(story => {
-      const photoUrl = story.photoUrl || 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Gambar+Tidak+Tersedia';
+    stories.forEach((story) => {
+      const photoUrl = story.photoUrl || "https://placehold.co/600x400/e2e8f0/94a3b8?text=Gambar+Tidak+Tersedia";
       storiesHtml += `
         <article class="story-card">
-          <img src="${photoUrl}" alt="Foto cerita dari ${story.name || 'Anonim'}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Error';">
+          <img src="${photoUrl}" alt="Foto cerita dari ${
+        story.name || "Anonim"
+      }" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Error';">
           <div class="story-card-content">
-            <h3>${story.name || 'Pengguna CeritaKita'}</h3>
-            <p class="story-description" title="${story.description || ''}">${story.description || 'Tidak ada deskripsi.'}</p>
+            <h3>${story.name || "Pengguna CeritaKita"}</h3>
+            <p class="story-description" title="${story.description || ""}">${story.description || "Tidak ada deskripsi."}</p>
             <p class="story-date">Dibuat pada: ${showFormattedDate(story.createdAt)}</p>
           </div>
           <div class="story-card-footer">
@@ -71,7 +96,7 @@ class HomePage {
         </article>
       `;
     });
-    storiesHtml += '</div>';
+    storiesHtml += "</div>";
     container.innerHTML = storiesHtml;
   }
 }
