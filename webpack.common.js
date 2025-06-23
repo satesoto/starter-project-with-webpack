@@ -23,7 +23,6 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        include: [path.resolve(__dirname, "node_modules")],
         use: ["style-loader", "css-loader"],
       },
     ],
@@ -39,9 +38,10 @@ module.exports = {
           from: path.resolve(__dirname, "src/public/"),
           to: path.resolve(__dirname, "dist/"),
         },
+        // Pastikan Anda memiliki file sw-custom.js di src/scripts/
         {
           from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
-          to: path.resolve(__dirname, "dist/"),
+          to: "sw-custom.js",
         },
       ],
     }),
@@ -49,12 +49,10 @@ module.exports = {
       swDest: "sw.js",
       clientsClaim: true,
       skipWaiting: true,
-      importScripts: ["./sw-custom.js"],
+      importScripts: ["sw-custom.js"],
       runtimeCaching: [
         {
-          // --- PERUBAHAN DI SINI ---
-          // Hanya cache permintaan ke endpoint /stories
-          urlPattern: new RegExp("^https://story-api.dicoding.dev/v1/stories"),
+          urlPattern: ({ request, url }) => request.method === "GET" && url.href.startsWith("https://story-api.dicoding.dev/v1/stories"),
           handler: "StaleWhileRevalidate",
           options: {
             cacheName: "story-api-cache",
@@ -64,7 +62,6 @@ module.exports = {
           },
         },
         {
-          // Aturan untuk gambar tetap sama
           urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/images/"),
           handler: "CacheFirst",
           options: {
