@@ -1,7 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const WebpackPwaManifest = require("webpack-pwa-manifest");
+const { GenerateSW } = require("workbox-webpack-plugin");
 
 module.exports = {
   entry: {
@@ -36,13 +36,8 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          // Hanya salin file yang tidak di-handle oleh plugin lain (seperti sw-custom.js)
           from: path.resolve(__dirname, "src/public/"),
           to: path.resolve(__dirname, "dist/"),
-          globOptions: {
-            // Hapus baris ignore yang memblokir manifest.json
-            ignore: ["**/icons/**"],
-          },
         },
         {
           from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
@@ -50,23 +45,35 @@ module.exports = {
         },
       ],
     }),
-    // Konfigurasi WebpackPwaManifest sudah cukup baik, kita akan menggunakannya sebagai sumber utama
-    new WebpackPwaManifest({
-      name: "CeritaKita - Berbagi Cerita",
-      short_name: "CeritaKita",
-      description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
-      background_color: "#ffffff",
-      theme_color: "#2563EB",
-      start_url: ".",
-      display: "standalone",
-      publicPath: '.', // <--- TAMBAHKAN BARIS INI
-      filename: 'manifest.json', // <--- TAMBAHKAN BARIS INI
-      icons: [
+    new GenerateSW({
+      swDest: "sw.js",
+      clientsClaim: true,
+      skipWaiting: true,
+      importScripts: ["./sw-custom.js"],
+      runtimeCaching: [
         {
-          src: path.resolve(__dirname, "src/public/icons/favicon.png"),
-          sizes: [96, 128, 192, 256, 384, 512],
-          purpose: "any maskable",
-          destination: "assets/icons",
+          // --- PERUBAHAN DI SINI ---
+          // Hanya cache permintaan ke endpoint /stories
+          urlPattern: new RegExp("^https://story-api.dicoding.dev/v1/stories"),
+          handler: "StaleWhileRevalidate",
+          options: {
+            cacheName: "story-api-cache",
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+        {
+          // Aturan untuk gambar tetap sama
+          urlPattern: ({ url }) => url.href.startsWith("https://story-api.dicoding.dev/images/"),
+          handler: "CacheFirst",
+          options: {
+            cacheName: "story-image-cache",
+            expiration: {
+              maxEntries: 60,
+              maxAgeSeconds: 30 * 24 * 60 * 60,
+            },
+          },
         },
       ],
     }),
