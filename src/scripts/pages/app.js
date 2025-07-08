@@ -16,7 +16,7 @@ import StoryDetailPage from "./story/story-detail-page";
 import LoginPresenter from "../presenter/LoginPresenter";
 import RegisterPresenter from "../presenter/RegisterPresenter";
 // Hapus impor HomePresenter karena akan dipindah
-import HomePresenter from "../presenter/HomePresenter";
+// import HomePresenter from '../presenter/HomePresenter';
 import StoryDetailPresenter from "../presenter/StoryDetailPresenter";
 import AddStoryPresenter from "../presenter/AddStoryPresenter";
 
@@ -170,7 +170,7 @@ class App {
   }
 
   async renderPage() {
-    if (this.#currentPath && this.#currentPath.startsWith("#/add-story") && !window.location.hash.startsWith("#/add-story")) {
+    if (this.#currentPath.startsWith("#/add-story") && !window.location.hash.startsWith("#/add-story")) {
       globalStopCameraStream();
     }
     this.#currentPath = window.location.hash;
@@ -189,14 +189,17 @@ class App {
         new LoginPresenter({ view: pageInstance, app: this });
       } else if (PageClass === RegisterPage) {
         new RegisterPresenter({ view: pageInstance, app: this });
-      } else if (PageClass === HomePage) {
-        const presenter = new HomePresenter({ view: pageInstance, app: this });
-        await presenter._loadStories();
+      } else if (PageClass === AddStoryPage) {
+        // <-- Pastikan AddStoryPresenter diinisialisasi
+        new AddStoryPresenter({ view: pageInstance, app: this });
       } else if (PageClass === StoryDetailPage) {
         new StoryDetailPresenter({ view: pageInstance, app: this, urlParams: pathSegments });
-      } else if (PageClass === AddStoryPage) {
-        new AddStoryPresenter({ view: pageInstance, app: this });
       }
+      // --- HAPUS BLOK IF UNTUK HOMEPAGE DARI SINI ---
+      // else if (PageClass === HomePage) {
+      //   const presenter = new HomePresenter({ view: pageInstance, app: this });
+      //   await presenter._loadStories();
+      // }
     } catch (e) {
       console.error("Error during presenter logic execution:", e);
     }
