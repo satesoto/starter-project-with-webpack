@@ -57,10 +57,11 @@ module.exports = {
       description: "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
       background_color: "#ffffff",
       theme_color: "#2563EB",
-      start_url: ".",
-      display: "standalone",
-      publicPath: '.', // <--- TAMBAHKAN BARIS INI
-      filename: 'manifest.json', // <--- TAMBAHKAN BARIS INI
+      // --- UBAH DUA BARIS DI BAWAH INI ---
+      start_url: "/starter-project-with-webpack/",
+      publicPath: '/starter-project-with-webpack/',
+      // ------------------------------------
+      filename: 'manifest.json',
       icons: [
         {
           src: path.resolve(__dirname, "src/public/icons/favicon.png"),
@@ -72,3 +73,4 @@ module.exports = {
     }),
   ],
 };
+

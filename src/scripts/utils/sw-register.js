@@ -21,7 +21,7 @@ const swRegister = async () => {
     return;
   }
 
-  const wb = new Workbox("/sw.js");
+  const wb = new Workbox("/starter-project-with-webpack/sw.js");
   try {
     await wb.register();
     console.log("Service worker berhasil didaftarkan.");
