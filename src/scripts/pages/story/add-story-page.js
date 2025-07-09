@@ -1,13 +1,24 @@
-import { addNewStory } from "../../data/api";
 import { isLoggedIn } from "../../data/auth";
 import { initMap, startCamera, stopCameraStream, captureImage, handleImageUpload, showMessageModal } from "../../utils/ui-helpers";
 import CONFIG from "../../config";
-import StoryDb from "../../data/idb-helper"; // <-- Impor idb-helper
 
 class AddStoryPage {
   constructor() {
+    this._formSubmitHandler = null;
     this.capturedFile = null;
     this.selectedLocation = null;
+  }
+
+  // Metode yang akan dipanggil oleh Presenter
+  onFormSubmit(handler) {
+    this._formSubmitHandler = handler;
+  }
+
+  // Metode untuk mengontrol UI dari Presenter
+  updateSubmitButton(disabled) {
+    const submitButton = document.querySelector('#add-story-form button[type="submit"]');
+    submitButton.disabled = disabled;
+    submitButton.textContent = disabled ? "Mengunggah..." : "Bagikan Cerita";
   }
 
   async render() {
@@ -15,6 +26,7 @@ class AddStoryPage {
       window.location.hash = "#/login";
       return "<p>Anda harus login untuk mengakses halaman ini.</p>";
     }
+    // Reset state setiap kali render
     this.capturedFile = null;
     this.selectedLocation = null;
     stopCameraStream();
@@ -30,9 +42,9 @@ class AddStoryPage {
 
           <div>
             <p id="photo-group-label" class="block text-sm font-medium text-gray-700">Foto Cerita (Wajib)</p>
-            <div class="image-buttons-container mt-1" role="group" aria-labelledby="photo-group-label">
+            <div class="image-buttons-container mt-1">
               <button type="button" id="start-camera-button">Buka Kamera</button>
-              <label for="image-upload-input" class="sr-only">Unggah Gambar</label>
+              
               <input type="file" id="image-upload-input" accept="image/*" class="sr-only">
               <button type="button" id="upload-image-button">Unggah Gambar</button>
             </div>
@@ -44,12 +56,10 @@ class AddStoryPage {
               </div>
             </div>
             <img id="captured-image-preview" src="#" alt="Pratinjau gambar" class="hidden mt-4 max-w-full max-h-80 mx-auto rounded-md border"/>
-            <p id="image-error-message" class="text-red-500 text-sm mt-1 hidden"></p>
           </div>
 
           <div>
             <label id="map-label" class="block text-sm font-medium text-gray-700">Lokasi Cerita (Opsional)</label>
-            <p class="location-label-info">Klik pada peta untuk memilih lokasi.</p>
             <div id="add-story-map-container" class="map-container" aria-labelledby="map-label"></div>
             <p id="selected-coords-display" class="text-sm text-gray-600 mt-2">Koordinat belum dipilih.</p>
           </div>
@@ -60,7 +70,7 @@ class AddStoryPage {
     `;
   }
 
-  async afterRender(appInstance) {
+  async afterRender() {
     if (!isLoggedIn()) return;
 
     // Inisialisasi peta
@@ -70,12 +80,17 @@ class AddStoryPage {
     });
 
     const form = document.getElementById("add-story-form");
-    const descriptionInput = document.getElementById("add-story-description");
-    const capturedImagePreview = document.getElementById("captured-image-preview");
     const imageUploadInput = document.getElementById("image-upload-input");
+    const uploadImageButton = document.getElementById("upload-image-button");
+    const capturedImagePreview = document.getElementById("captured-image-preview");
     const cameraFeed = document.getElementById("camera-feed");
-    const submitButton = form.querySelector('button[type="submit"]');
 
+    // **PERBAIKAN UNTUK UNGGAH GAMBAR**
+    uploadImageButton.addEventListener("click", () => {
+      imageUploadInput.click(); // Memicu klik pada input file yang tersembunyi
+    });
+
+    // Setup event listeners untuk kamera dan file
     document.getElementById("start-camera-button").onclick = () =>
       startCamera(cameraFeed, capturedImagePreview, (msg) => showMessageModal("Kamera Error", msg, "error"));
     document.getElementById("stop-camera-button").onclick = stopCameraStream;
@@ -88,54 +103,18 @@ class AddStoryPage {
         this.capturedFile = file;
       });
 
-    form.onsubmit = async (event) => {
+    // Form submit hanya akan meneruskan data ke Presenter
+    form.addEventListener("submit", (event) => {
       event.preventDefault();
-      submitButton.disabled = true;
-      submitButton.textContent = "Mengunggah...";
-
-      const description = descriptionInput.value;
-      if (!description || !this.capturedFile) {
-        showMessageModal("Validasi Gagal", "Deskripsi dan foto cerita wajib diisi.", "error");
-        submitButton.disabled = false;
-        submitButton.textContent = "Bagikan Cerita";
-        return;
+      if (this._formSubmitHandler) {
+        this._formSubmitHandler({
+          description: form.elements.description.value,
+          photo: this.capturedFile,
+          lat: this.selectedLocation ? this.selectedLocation.lat : null,
+          lon: this.selectedLocation ? this.selectedLocation.lon : null,
+        });
       }
-
-      const storyData = {
-        description: description,
-        photo: this.capturedFile,
-        lat: this.selectedLocation ? this.selectedLocation.lat : null,
-        lon: this.selectedLocation ? this.selectedLocation.lon : null,
-      };
-
-      try {
-        // Coba kirim langsung jika online
-        await addNewStory(storyData.description, storyData.photo, storyData.lat, storyData.lon);
-        showMessageModal("Cerita Ditambahkan", "Cerita baru Anda telah berhasil dibagikan!", "success");
-        window.location.hash = "#/";
-      } catch (error) {
-        // Jika gagal (kemungkinan besar karena offline), simpan untuk sinkronisasi nanti
-        console.error("Gagal mengirim cerita, menyimpan untuk sinkronisasi: ", error);
-        await this._handleOfflineSubmission(storyData);
-      } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = "Bagikan Cerita";
-      }
-    };
-  }
-
-  async _handleOfflineSubmission(storyData) {
-    await StoryDb.addPendingStory(storyData);
-
-    // Daftarkan sync task
-    if ("serviceWorker" in navigator && "SyncManager" in window) {
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.sync.register("add-new-story-sync");
-      });
-    }
-
-    showMessageModal("Mode Offline", "Anda sedang offline. Cerita Anda telah disimpan dan akan diunggah secara otomatis saat Anda kembali online.", "info");
-    window.location.hash = "#/";
+    });
   }
 }
 

@@ -1,57 +1,63 @@
-import { addNewStory } from '../data/api';
+import { addNewStory } from "../data/api";
+import { showMessageModal } from "../utils/ui-helpers";
+import StoryDb from "../data/idb-helper";
 
 class AddStoryPresenter {
   constructor({ view, app }) {
     this._view = view;
     this._app = app;
-    this._capturedFile = null;
-    this._selectedLocation = null;
     this._isSubmitting = false;
 
     this._view.onFormSubmit(this._handleFormSubmit.bind(this));
-    this._view.onImageCaptured((file) => {
-      this._capturedFile = file;
-    });
-    this._view.onLocationSelected((coords) => {
-      this._selectedLocation = coords;
-    });
   }
 
-  async _handleFormSubmit({ description }) {
+  async _handleFormSubmit({ description, photo, lat, lon }) {
     if (this._isSubmitting) return;
 
-    if (!description) {
-      this._view.showError('Deskripsi cerita tidak boleh kosong.');
-      return;
-    }
-    if (!this._capturedFile) {
-      this._view.showError('Foto cerita wajib diisi.');
+    if (!description || !photo) {
+      showMessageModal("Validasi Gagal", "Deskripsi dan foto cerita wajib diisi.", "error");
       return;
     }
 
     this._isSubmitting = true;
-    this._view.updateSubmitButton(true); // Disable button
+    this._view.updateSubmitButton(true); // Nonaktifkan tombol
     this._app.showGlobalLoading();
 
     try {
-      const lat = this._selectedLocation ? this._selectedLocation.lat : null;
-      const lon = this._selectedLocation ? this._selectedLocation.lon : null;
-
-      const response = await addNewStory(description, this._capturedFile, lat, lon);
-
+      const response = await addNewStory(description, photo, lat, lon);
       if (response.error) {
         throw new Error(response.message);
       }
-
-      this._view.showSuccess('Cerita Anda telah berhasil dibagikan!');
-      window.location.hash = '#/';
+      this._app.hideGlobalLoading(); // Sembunyikan loading sebelum navigasi
+      showMessageModal("Cerita Ditambahkan", "Cerita baru Anda telah berhasil dibagikan!", "success");
+      window.location.hash = "#/";
     } catch (error) {
-      this._view.showError(error.message || 'Gagal mengunggah cerita. Silakan coba lagi.');
+      console.error("Gagal mengunggah cerita:", error.message);
+
+      // Cek apakah error karena offline atau bukan
+      if (navigator.onLine === false || error.message.includes("Failed to fetch")) {
+        await this._saveForSync({ description, photo, lat, lon });
+      } else {
+        // Jika error lain, tampilkan pesan error biasa
+        this._app.hideGlobalLoading();
+        showMessageModal("Gagal Mengunggah Cerita", error.message, "error");
+        this._view.updateSubmitButton(false); // Aktifkan kembali tombol jika gagal dan tidak offline
+      }
     } finally {
       this._isSubmitting = false;
-      this._view.updateSubmitButton(false); // Re-enable button
-      this._app.hideGlobalLoading();
     }
+  }
+
+  async _saveForSync(storyData) {
+    await StoryDb.addPendingStory(storyData);
+    if ("serviceWorker" in navigator && "SyncManager" in window) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.sync.register("add-new-story-sync");
+      });
+    }
+    this._app.hideGlobalLoading();
+    showMessageModal("Mode Offline", "Cerita disimpan dan akan diunggah saat kembali online.", "info");
+    window.location.hash = "#/";
   }
 }
 
