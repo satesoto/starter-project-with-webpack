@@ -1,1 +1,0 @@
-self.addEventListener("push",(i=>{let o;console.log("Push event diterima:",i);try{o=i.data.json()}catch(i){console.error("Gagal mem-parsing data notifikasi",i),o={title:"Notifikasi",options:{body:"Anda menerima pesan baru."}}}const n=o.title,t={body:o.options.body,icon:"icons/favicon.png",badge:"icons/favicon.png"};i.waitUntil(self.registration.showNotification(n,t))}));
