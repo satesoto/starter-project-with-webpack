@@ -44,5 +44,35 @@
   "start_url": "/starter-project-with-webpack/",
   "description": "Aplikasi untuk berbagi cerita dan pengalaman Anda dengan dunia.",
   "background_color": "#ffffff",
-  "theme_color": "#2563EB"
+  "theme_color": "#2563EB",
+  "screenshots": [
+    {
+      "src": "images/screenshots/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tampilan Beranda Cerita"
+    },
+    {
+      "src": "images/screenshots/screenshot2.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tampilan Tambah Cerita"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tambah Cerita Baru",
+      "short_name": "Baru",
+      "description": "Bagikan pengalaman baru Anda.",
+      "url": "/starter-project-with-webpack/#/add-story",
+      "icons": [
+        {
+          "src": "assets/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
