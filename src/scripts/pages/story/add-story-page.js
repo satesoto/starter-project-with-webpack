@@ -1,14 +1,8 @@
-import { addNewStory } from '../../data/api';
-import { isLoggedIn } from '../../data/auth';
-import { 
-  initMap, 
-  startCamera, 
-  stopCameraStream, 
-  captureImage, 
-  handleImageUpload, 
-  showMessageModal 
-} from '../../utils/ui-helpers';
-import CONFIG from '../../config';
+import { addNewStory } from "../../data/api";
+import { isLoggedIn } from "../../data/auth";
+import { initMap, startCamera, stopCameraStream, captureImage, handleImageUpload, showMessageModal } from "../../utils/ui-helpers";
+import CONFIG from "../../config";
+import StoryDb from "../../data/idb-helper"; // <-- Impor idb-helper
 
 class AddStoryPage {
   constructor() {
@@ -18,8 +12,8 @@ class AddStoryPage {
 
   async render() {
     if (!isLoggedIn()) {
-      window.location.hash = '#/login';
-      return '<p>Anda harus login untuk mengakses halaman ini.</p>';
+      window.location.hash = "#/login";
+      return "<p>Anda harus login untuk mengakses halaman ini.</p>";
     }
     this.capturedFile = null;
     this.selectedLocation = null;
@@ -35,11 +29,9 @@ class AddStoryPage {
           </div>
 
           <div>
-            <!-- Label ini sekarang secara logis mengelompokkan tombol-tombol di bawahnya -->
             <p id="photo-group-label" class="block text-sm font-medium text-gray-700">Foto Cerita (Wajib)</p>
             <div class="image-buttons-container mt-1" role="group" aria-labelledby="photo-group-label">
               <button type="button" id="start-camera-button">Buka Kamera</button>
-              <!-- Label ini secara eksplisit terhubung ke input file yang tersembunyi -->
               <label for="image-upload-input" class="sr-only">Unggah Gambar</label>
               <input type="file" id="image-upload-input" accept="image/*" class="sr-only">
               <button type="button" id="upload-image-button">Unggah Gambar</button>
@@ -56,7 +48,6 @@ class AddStoryPage {
           </div>
 
           <div>
-            <!-- Menggunakan aria-labelledby untuk menghubungkan judul dengan elemen interaktif (peta) -->
             <label id="map-label" class="block text-sm font-medium text-gray-700">Lokasi Cerita (Opsional)</label>
             <p class="location-label-info">Klik pada peta untuk memilih lokasi.</p>
             <div id="add-story-map-container" class="map-container" aria-labelledby="map-label"></div>
@@ -72,64 +63,79 @@ class AddStoryPage {
   async afterRender(appInstance) {
     if (!isLoggedIn()) return;
 
-    initMap(
-      'add-story-map-container', CONFIG.DEFAULT_MAP_CONFIG.coords, 'Pilih Lokasi', false, true,
-      (coords) => {
-        this.selectedLocation = coords;
-        document.getElementById('selected-coords-display').textContent = `Koordinat: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`;
-      },
-    );
+    // Inisialisasi peta
+    initMap("add-story-map-container", CONFIG.DEFAULT_MAP_CONFIG.coords, "Pilih Lokasi", false, true, (coords) => {
+      this.selectedLocation = coords;
+      document.getElementById("selected-coords-display").textContent = `Koordinat: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`;
+    });
 
-    const form = document.getElementById('add-story-form');
-    const descriptionInput = document.getElementById('add-story-description');
-    const imageErrorMessage = document.getElementById('image-error-message');
-    const capturedImagePreview = document.getElementById('captured-image-preview');
-    const imageUploadInput = document.getElementById('image-upload-input');
-    const cameraFeed = document.getElementById('camera-feed');
+    const form = document.getElementById("add-story-form");
+    const descriptionInput = document.getElementById("add-story-description");
+    const capturedImagePreview = document.getElementById("captured-image-preview");
+    const imageUploadInput = document.getElementById("image-upload-input");
+    const cameraFeed = document.getElementById("camera-feed");
     const submitButton = form.querySelector('button[type="submit"]');
 
-    const handleFileChange = (file) => {
-      this.capturedFile = file;
-      if (imageErrorMessage) imageErrorMessage.classList.add('hidden');
-    };
-    
-    document.getElementById('start-camera-button').onclick = () => startCamera(cameraFeed, capturedImagePreview, (msg) => showMessageModal('Kamera Error', msg, 'error'));
-    document.getElementById('stop-camera-button').onclick = stopCameraStream;
-    document.getElementById('capture-image-button').onclick = () => captureImage(cameraFeed, capturedImagePreview, handleFileChange);
-    document.getElementById('upload-image-button').onclick = () => imageUploadInput.click();
-    imageUploadInput.onchange = (event) => handleImageUpload(event, capturedImagePreview, handleFileChange);
+    document.getElementById("start-camera-button").onclick = () =>
+      startCamera(cameraFeed, capturedImagePreview, (msg) => showMessageModal("Kamera Error", msg, "error"));
+    document.getElementById("stop-camera-button").onclick = stopCameraStream;
+    document.getElementById("capture-image-button").onclick = () =>
+      captureImage(cameraFeed, capturedImagePreview, (file) => {
+        this.capturedFile = file;
+      });
+    imageUploadInput.onchange = (event) =>
+      handleImageUpload(event, capturedImagePreview, (file) => {
+        this.capturedFile = file;
+      });
 
     form.onsubmit = async (event) => {
       event.preventDefault();
+      submitButton.disabled = true;
+      submitButton.textContent = "Mengunggah...";
+
       const description = descriptionInput.value;
       if (!description || !this.capturedFile) {
-        showMessageModal('Validasi Gagal', 'Deskripsi dan foto cerita wajib diisi.', 'error');
+        showMessageModal("Validasi Gagal", "Deskripsi dan foto cerita wajib diisi.", "error");
+        submitButton.disabled = false;
+        submitButton.textContent = "Bagikan Cerita";
         return;
       }
-      
-      submitButton.disabled = true;
-      submitButton.textContent = 'Mengunggah...';
-      if (appInstance) appInstance.showGlobalLoading();
+
+      const storyData = {
+        description: description,
+        photo: this.capturedFile,
+        lat: this.selectedLocation ? this.selectedLocation.lat : null,
+        lon: this.selectedLocation ? this.selectedLocation.lon : null,
+      };
 
       try {
-        const lat = this.selectedLocation ? this.selectedLocation.lat : null;
-        const lon = this.selectedLocation ? this.selectedLocation.lon : null;
-        const response = await addNewStory(description, this.capturedFile, lat, lon);
-        
-        if (response.error) {
-          throw new Error(response.message);
-        }
-
-        showMessageModal('Cerita Ditambahkan', 'Cerita baru Anda telah berhasil dibagikan!', 'success');
-        window.location.hash = '#/';
+        // Coba kirim langsung jika online
+        await addNewStory(storyData.description, storyData.photo, storyData.lat, storyData.lon);
+        showMessageModal("Cerita Ditambahkan", "Cerita baru Anda telah berhasil dibagikan!", "success");
+        window.location.hash = "#/";
       } catch (error) {
-        showMessageModal('Gagal Menambahkan Cerita', error.message, 'error');
+        // Jika gagal (kemungkinan besar karena offline), simpan untuk sinkronisasi nanti
+        console.error("Gagal mengirim cerita, menyimpan untuk sinkronisasi: ", error);
+        await this._handleOfflineSubmission(storyData);
       } finally {
         submitButton.disabled = false;
-        submitButton.textContent = 'Bagikan Cerita';
-        if (appInstance) appInstance.hideGlobalLoading();
+        submitButton.textContent = "Bagikan Cerita";
       }
     };
+  }
+
+  async _handleOfflineSubmission(storyData) {
+    await StoryDb.addPendingStory(storyData);
+
+    // Daftarkan sync task
+    if ("serviceWorker" in navigator && "SyncManager" in window) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.sync.register("add-new-story-sync");
+      });
+    }
+
+    showMessageModal("Mode Offline", "Anda sedang offline. Cerita Anda telah disimpan dan akan diunggah secara otomatis saat Anda kembali online.", "info");
+    window.location.hash = "#/";
   }
 }
 
