@@ -44,10 +44,10 @@ module.exports = {
             ignore: ["**/icons/**"],
           },
         },
-        {
-          from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
-          to: path.resolve(__dirname, "dist/"),
-        },
+        // {
+        //   from: path.resolve(__dirname, "src/scripts/sw-custom.js"),
+        //   to: path.resolve(__dirname, "dist/"),
+        // },
       ],
     }),
     // Konfigurasi WebpackPwaManifest sudah cukup baik, kita akan menggunakannya sebagai sumber utama

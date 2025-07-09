@@ -31,6 +31,7 @@ module.exports = merge(common, {
         warnings: false, // Nonaktifkan overlay warning jika terlalu berisik
       },
     },
-    historyApiFallback: true, // Penting untuk SPA dengan client-side routing
+    historyApiFallback: true,
+     // Penting untuk SPA dengan client-side routing
   },
 });
